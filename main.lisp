@@ -28,19 +28,22 @@
                          (if (equal (nth j state) 'B)
                              (setf inversions (+ inversions 1))))))
                  (return-from h inversions)))
-             (swap-blank (relative-position &key h)
-               "Swaps blank with the tile at the relative-position to blank."
-               (setf (nth blank-pos puzzle)
-                     (nth (+ blank-pos relative-position) puzzle))
+             (swap-blank (state relative-position &key h)
+               "Swaps blank with the tile at the relative-position to blank.
+               Key h returns h value of the proposed swap, unchanging input.
+               Key state returns new state after swap, unchanging input."
+               (setf (nth blank-pos state)
+                     (nth (+ blank-pos relative-position) state))
                (setf blank-pos (+ blank-pos relative-position))
-               (setf (nth blank-pos puzzle) 'O)
+               (setf (nth blank-pos state) 'O)
                (when (equal h t)
-                 (let ((value 0)))
-                   (setf value (h puzzle))
-                   (swap-blank (- relative-position))
-                   (return-from swap-blank value)))
+                 (let ((value (h state))
+                       (state-copy state))
+                   (swap-blank state (- relative-position)) ; Undo changes
+                   (return-from swap-blank (if h value state-copy)))))
              (greedy ()
-               "Solves the puzzle using Greedy method."
+               "Solves the puzzle using Greedy method. When equally promising
+               nodes are found, one is chosen at random (to avoid loops)."
                (do ((best-choice nil)
                     (best-h nil))
                  ((= (h puzzle) 0))
@@ -51,14 +54,36 @@
                                     (min (+ 2 (- (length puzzle) blank-pos)) 6)))
                  (print open)
                  (setf best-choice (list (first open)))
-                 (setf best-h (swap-blank (first open) :h t))
-                 ;; Look for the best choice for next node           
+                 (setf best-h (swap-blank puzzle (first open) :h t))
+                 ;; Look for the best choice for next node, then make choice 
                  (dolist (i open)
-                   (when (< (swap-blank i :h t) best-h)
+                   (when (< (swap-blank puzzle i :h t) best-h)
                      (setf best-choice (list i))
-                     (setf best-h (swap-blank i :h t)))
-                   (when (= (swap-blank i :h t) best-h)
+                     (setf best-h (swap-blank puzzle i :h t)))
+                   (when (= (swap-blank puzzle i :h t) best-h)
                      (setf best-choice (append best-choice (list i)))))
-                 (swap-blank (random-element best-choice)))))
+                 (swap-blank puzzle (random-element best-choice))))
+             (UCS ()
+               "Solves puzzle using uniform cost search."
+               (setf open (list (cons puzzle 10)))
+               (do* ((current-node (first open))
+                     (current-h (h (first current-node)) 0))
+                 ((= current-h 0)) ; End when at goal
+                 (print open)
+                 ;; Consider potential children
+                 (setf children (subseq '(-3 -2 -1 1 2 3)
+                                        (max (- 3 blank-pos) 0)
+                                        (min (+ 2 (- (length puzzle) blank-pos)) 6)))
+                 ;; Put children onto open list
+                 (dolist (x children)
+                   (nconc open (list (cons "Node" (+ (cdr current-node) (abs x))))))
+                 ;; Turn open into a priority queue, sorting by cost
+                 ;; Note: A heap would be more efficient
+                 (sort open (lambda (x y) (if (< (cdr x) (cdr y)) t nil)))
+                 (setf closed (list (pop open))))
+               (print open)
+               (print closed)))
       (greedy)
+      (print puzzle)
+      (UCS)
       (print puzzle))))
