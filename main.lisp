@@ -44,16 +44,12 @@
                (do ((best-choice nil)
                     (best-h nil))
                  ((= (h puzzle) 0))
-                 (print puzzle)
                  (if (= (h puzzle) 0) (return-from greedy nil))
-                 ;; Cover edge cases
-                 (cond ((= blank-pos 0) (setf open '(1 2 3)))
-                       ((= blank-pos 1) (setf open '(-1 1 2 3)))
-                       ((= blank-pos 2) (setf open '(-2 1 2 3)))
-                       ((= blank-pos (- (length puzzle) 1)) (setf open '(-3 -2 -1)))
-                       ((= blank-pos (- (length puzzle) 2)) (setf open '(-3 -2 -1 1)))
-                       ((= blank-pos (- (length puzzle) 3)) (setf open '(-3 -2 -1 1 2)))
-                       (t (setf open '(-3 -2 -1 1 2 3))))
+                 ;; Create open, being careful about edge cases
+                 (setf open (subseq '(-3 -2 -1 1 2 3)
+                                    (max (- 3 blank-pos) 0)
+                                    (min (+ 2 (- (length puzzle) blank-pos)) 6)))
+                 (print open)
                  (setf best-choice (list (first open)))
                  (setf best-h (swap-blank (first open) :h t))
                  ;; Look for the best choice for next node           
