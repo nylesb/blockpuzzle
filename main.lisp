@@ -13,7 +13,13 @@
                          ((equal tile 'B) (setf black (+ black 1)))))
                  (append (make-list white :initial-element 'W)
                          (make-list black :initial-element 'B)))))
-    (labels ((random-element (list)
+    (labels ((member-list (input-list list-of-lists)
+               "Checks for membership of input-list in list-of-lists."
+               (dolist (item list-of-lists)
+                 (if (equal item input-list)
+                     (return-from member-list t)))
+               nil)
+             (random-element (list)
               "Returns a random element of LIST."
               (if (not (and (list) (listp list)))
                   (nth (random (1- (1+ (length list)))) list)
@@ -28,18 +34,18 @@
                          (if (equal (nth j state) 'B)
                              (setf inversions (+ inversions 1))))))
                  (return-from h inversions)))
-             (swap-blank (state relative-position &key h)
+             (swap-blank (state relative-position &key h peek)
                "Swaps blank with the tile at the relative-position to blank.
-               Key h returns h value of the proposed swap, unchanging input.
-               Key state returns new state after swap, unchanging input."
+               Key h returns h value of the proposed swap, unchanging state.
+               Key peek looks at the swapped result, but doesn't change state."
                (setf (nth blank-pos state)
                      (nth (+ blank-pos relative-position) state))
                (setf blank-pos (+ blank-pos relative-position))
                (setf (nth blank-pos state) 'O)
-               (when (equal h t)
+               (when (or h peek) ; Undo changes, return requested result
                  (let ((value (h state))
-                       (state-copy state))
-                   (swap-blank state (- relative-position)) ; Undo changes
+                       (state-copy (copy-list state)))
+                   (swap-blank state (- relative-position))
                    (return-from swap-blank (if h value state-copy)))))
              (greedy ()
                "Solves the puzzle using Greedy method. When equally promising
@@ -65,25 +71,28 @@
                  (swap-blank puzzle (random-element best-choice))))
              (UCS ()
                "Solves puzzle using uniform cost search."
-               (setf open (list (cons puzzle 10)))
-               (do* ((current-node (first open))
-                     (current-h (h (first current-node)) 0))
+               (setf open (list (cons puzzle 0)))
+               (do* ((current-node (first open) (first open))
+                     (current-h (h (first current-node)) (h (first current-node))))
                  ((= current-h 0)) ; End when at goal
-                 (print open)
-                 ;; Consider potential children
+                 ;; Get correct position of the blank so that swap-blank works
+                 (setf blank-pos (dotimes (i (length (first current-node)))
+                                   (if (equal (nth i (first current-node)) 'O)
+                                       (return i))))
+                 ;; Consider potential moves from current state
                  (setf children (subseq '(-3 -2 -1 1 2 3)
                                         (max (- 3 blank-pos) 0)
                                         (min (+ 2 (- (length puzzle) blank-pos)) 6)))
-                 ;; Put children onto open list
+                 ;; Put children into open list if not closed list
                  (dolist (x children)
-                   (nconc open (list (cons "Node" (+ (cdr current-node) (abs x))))))
+                   (let ((child-state (swap-blank (first current-node) x :peek t))
+                         (child-cost (+ (cdr current-node) (abs x))))
+                     (if (not (member-list child-state closed))
+                         (nconc open (list (cons child-state child-cost))))))
                  ;; Turn open into a priority queue, sorting by cost
                  ;; Note: A heap would be more efficient
                  (sort open (lambda (x y) (if (< (cdr x) (cdr y)) t nil)))
-                 (setf closed (list (pop open))))
-               (print open)
-               (print closed)))
-      (greedy)
-      (print puzzle)
-      (UCS)
-      (print puzzle))))
+                 (setf closed (append closed (list (first (pop open))))))
+               (princ (format nil "~%Solution: ~A" (first open)))))
+      ;(greedy)
+      (UCS))))
