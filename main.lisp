@@ -1,18 +1,17 @@
+;;; Data structure to traverse the state space
+(defclass node ()
+  ((state :initarg :state :accessor state)
+   (cost :initarg :cost :accessor cost)
+   (path :initarg :path :accessor path)))
+
 (defun blockpuzzle (input)
   "Implements solution to the blokpuzzle for Greedy, Uniform cost & A* search"
   (let* ((open ())
          (closed ())
-         (puzzle input)
+         (examined-states 0)
          (blank-pos (dotimes (i (length input)) ; Index of position of blank tile
                       (if (equal (nth i input) 'O)
-                        (return i))))
-         (goal (let ((white 0)
-                     (black 0))
-                 (dolist (tile puzzle)
-                   (cond ((equal tile 'W) (setf white (+ white 1)))
-                         ((equal tile 'B) (setf black (+ black 1)))))
-                 (append (make-list white :initial-element 'W)
-                         (make-list black :initial-element 'B)))))
+                        (return i)))))
     (labels ((member-list (input-list list-of-lists)
                "Checks for membership of input-list in list-of-lists."
                (dolist (item list-of-lists)
@@ -47,9 +46,9 @@
                        (state-copy (copy-list state)))
                    (swap-blank state (- relative-position))
                    (return-from swap-blank (if h value state-copy)))))
-             (greedy ()
+             (greedy (puzzle)
                "Solves the puzzle using Greedy method. When equally promising
-               nodes are found, one is chosen at random (to avoid loops)."
+               nodes are found, one is chosen at random (to avoid infinite loops)."
                (do ((best-choice nil)
                     (best-h nil))
                  ((= (h puzzle) 0))
@@ -69,30 +68,34 @@
                    (when (= (swap-blank puzzle i :h t) best-h)
                      (setf best-choice (append best-choice (list i)))))
                  (swap-blank puzzle (random-element best-choice))))
-             (UCS ()
+             (UCS (puzzle)
                "Solves puzzle using uniform cost search."
-               (setf open (list (cons puzzle 0)))
+               (setf open (list (list puzzle 0 '(0))))
+               (print open)
                (do* ((current-node (first open) (first open))
-                     (current-h (h (first current-node)) (h (first current-node))))
+                     (current-h (h (first current-node)) (h (first current-node)))
+                     (moves 0 0))
                  ((= current-h 0)) ; End when at goal
+                 (setf examined-states (+ examined-states 1))
                  ;; Get correct position of the blank so that swap-blank works
                  (setf blank-pos (dotimes (i (length (first current-node)))
                                    (if (equal (nth i (first current-node)) 'O)
                                        (return i))))
                  ;; Consider potential moves from current state
-                 (setf children (subseq '(-3 -2 -1 1 2 3)
+                 (setf moves (subseq '(-3 -2 -1 1 2 3)
                                         (max (- 3 blank-pos) 0)
                                         (min (+ 2 (- (length puzzle) blank-pos)) 6)))
-                 ;; Put children into open list if not closed list
-                 (dolist (x children)
+                 ;; Put moves into open list if not already explored
+                 (dolist (x moves)
                    (let ((child-state (swap-blank (first current-node) x :peek t))
-                         (child-cost (+ (cdr current-node) (abs x))))
+                         (child-cost (+ (second current-node) (abs x))))
                      (if (not (member-list child-state closed))
-                         (nconc open (list (cons child-state child-cost))))))
+                         (nconc open (list (list child-state child-cost (push x (third current-node))))))))
                  ;; Turn open into a priority queue, sorting by cost
                  ;; Note: A heap would be more efficient
-                 (sort open (lambda (x y) (if (< (cdr x) (cdr y)) t nil)))
+                 (sort open (lambda (x y) (if (< (second x) (second y)) t nil)))
+                 ;(print open)
                  (setf closed (append closed (list (first (pop open))))))
-               (princ (format nil "~%Solution: ~A" (first open)))))
-      ;(greedy)
-      (UCS))))
+               (princ (format nil "~%Solution: ~A, ~A" examined-states (first open)))))
+      ;(greedy input)
+      (UCS input))))
