@@ -4,4 +4,4 @@
 (blockpuzzle '(O W))
 (blockpuzzle '(O B W))
 (blockpuzzle '(B B W O B W))
-;(blockpuzzle '(B W W B O B W W B))
+(blockpuzzle '(B W W B O B W W B))
