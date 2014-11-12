@@ -37,12 +37,10 @@
                "Takes path as list of integers, formatting it properly for print."
                (let ((path-with-dir '())
                      (puzzle (copy-list input)))
-                 (print (list "mypuz: " puzzle))
                  (unless puzzle (return-from process-path nil))
                  (dolist (move (reverse path))
-                   (print (list "move: " move))
-                   ;(print (swap-blank puzzle move))
-                   (push move path-with-dir))
+                   (swap-blank puzzle move)
+                   (push (cons (copy-list puzzle) (if (= 0 move) "S_zero" move)) path-with-dir))
                  (reverse path-with-dir)))
              (swap-blank (state relative-position &key h peek)
                "Swaps blank with the tile at the relative-position to blank.
@@ -87,21 +85,28 @@
                "Solves puzzle using uniform cost search."
                (unless puzzle (return-from UCS (print "Empty puzzle")))
                (setf open (list (make-instance 'node :state puzzle :cost 0 :path '(0))))
-               ;(print (state (first open)))
                (do* ((current-node (first open) (first open))
                      (current-h (h (state current-node)) (h (state current-node)))
                      (moves 0 0))
                  ((= current-h 0)) ; End when at goal
+                 ;; If our current node is on closed (already explored), get next item
+                 ;; on open instead. Program might find multiple paths to a state, and since
+                 ;; closed doesn't get updated until a node is explored we need this check.
+                 (do ((current-state (state current-node) (state current-node)))
+                   ((not (member-list current-state closed)))
+                   (pop open)
+                   (setf current-node (first open)))
                  (setf examined-states (+ examined-states 1))
                  ;; Get correct position of the blank so that swap-blank works
                  (setf blank-pos (dotimes (i (length (state current-node)))
                                    (if (equal (nth i (state current-node)) 'O)
                                        (return i))))
-                 ;; Consider potential moves from current state
+                 ;; Determine all potential moves from current state
                  (setf moves (subseq '(-3 -2 -1 1 2 3)
                                         (max (- 3 blank-pos) 0)
                                         (min (+ 2 (- (length puzzle) blank-pos)) 6)))
-                 ;; Put moves into open list if not already explored
+                 ;; Apply move to current node and generate that on open,
+                 ;; unless the node has been generated already.
                  (dolist (x moves)
                    (let* ((child-state (swap-blank (state current-node) x :peek t))
                          (child-cost (+ (cost current-node) (abs x)))
@@ -113,7 +118,10 @@
                  ;; Note: A heap would be more efficient
                  (sort open (lambda (x y) (if (< (cost x) (cost y)) t nil)))
                  (setf closed (append closed (list (state (pop open))))))
-               (princ (format nil "~%Puzzle: ~A~%States examined: ~A~%Cost: ~A~%Path: ~A~%Result: ~A~%"
-                        puzzle examined-states (cost (first open)) (process-path (path (first open))) (state (first open))))))
+               ;; Pretty printing for UCS below, if desired.
+               ;;(princ (format nil "~%Puzzle: ~A~%States examined: ~A~%Solution cost: ~A~%Path: ~A~%Result: ~A~%"
+               ;;         puzzle examined-states (cost (first open)) (process-path (path (first open))) (state (first open))))))
+               ;; Printing as per assignment requireents below.
+               (print (list examined-states (cost (first open)) (process-path (path (first open)))))))
       ;(greedy input)
       (UCS input))))

@@ -1,0 +1,7 @@
+(load "main.lisp")
+(blockpuzzle '())
+(blockpuzzle '(O))
+(blockpuzzle '(O W))
+(blockpuzzle '(O B W))
+(blockpuzzle '(B B W O))
+(blockpuzzle '(B W W B O B W W B W))
