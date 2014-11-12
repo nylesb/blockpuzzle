@@ -1,8 +1,15 @@
-;;; Data structure to traverse the state space
+;;; Data structure to store data while traverse the configuration space
 (defclass node ()
   ((state :initarg :state :accessor state)
    (cost :initarg :cost :accessor cost)
-   (path :initarg :path :accessor path)))
+   (path :initarg :path :accessor path)
+   (h-estimate :initarg :h-estimate :accessor h-estimate)
+   (cost-plus-h :initarg :cost-plus-h :accessor cost-plus-h)))
+
+;(defmethod initialize-instance :after ((mynode node) &key)
+;  (let ((state (slot-value mynode 'state))
+;        (cost (slot-value mynode 'cost)))
+;    (setf (slot-value mynode 'h-estimate) (+ cost cost))))
 
 (defun blockpuzzle (input)
   "Implements solution to the blokpuzzle for Greedy, Uniform cost & A* search"
@@ -81,21 +88,18 @@
                    (when (= (swap-blank puzzle i :h t) best-h)
                      (setf best-choice (append best-choice (list i)))))
                  (swap-blank puzzle (random-element best-choice))))
-             (UCS (puzzle)
-               "Solves puzzle using uniform cost search."
-               (unless puzzle (return-from UCS (print "Empty puzzle")))
-               (setf open (list (make-instance 'node :state puzzle :cost 0 :path '(0))))
+             (search (puzzle &key UCS ASTAR)
+               "Template for solving puzzle via search using open and closed lists.
+               Callable for UCS or ASTAR, which sort nodes with different priorities."
+               (unless puzzle (return-from search (print "Empty puzzle")))
+               (setf open (list (make-instance 'node :state puzzle :cost 0 :path '(0)
+                                                     :h-estimate (h puzzle)
+                                                     :cost-plus-h (h puzzle))))
+               (setf count 0)
                (do* ((current-node (first open) (first open))
                      (current-h (h (state current-node)) (h (state current-node)))
                      (moves 0 0))
                  ((= current-h 0)) ; End when at goal
-                 ;; If our current node is on closed (already explored), get next item
-                 ;; on open instead. Program might find multiple paths to a state, and since
-                 ;; closed doesn't get updated until a node is explored we need this check.
-                 (do ((current-state (state current-node) (state current-node)))
-                   ((not (member-list current-state closed)))
-                   (pop open)
-                   (setf current-node (first open)))
                  (setf examined-states (+ examined-states 1))
                  ;; Get correct position of the blank so that swap-blank works
                  (setf blank-pos (dotimes (i (length (state current-node)))
@@ -108,20 +112,37 @@
                  ;; Apply move to current node and generate that on open,
                  ;; unless the node has been generated already.
                  (dolist (x moves)
-                   (let* ((child-state (swap-blank (state current-node) x :peek t))
-                         (child-cost (+ (cost current-node) (abs x)))
-                         (child-path (append (list x) (path current-node)))
-                         (next-node (make-instance 'node :state child-state :cost child-cost :path child-path)))
+                   (let* ((child-state (copy-list (swap-blank (state current-node) x :peek t)))
+                          (child-cost (+ (cost current-node) (abs x)))
+                          (child-path (append (list x) (path current-node)))
+                          (next-node (make-instance 'node :state child-state
+                                                          :cost child-cost
+                                                          :path child-path)))
+                     (setf (slot-value next-node 'h-estimate) (h (state next-node)))
+                     (setf (slot-value next-node 'cost-plus-h) (+ (cost next-node) (h-estimate next-node)))
                      (if (not (member-list child-state closed))
                          (setf open (append open (list next-node))))))
                  ;; Turn open into a priority queue, sorting by cost
                  ;; Note: A heap would be more efficient
-                 (sort open (lambda (x y) (if (< (cost x) (cost y)) t nil)))
-                 (setf closed (append closed (list (state (pop open))))))
+                 (if ASTAR (sort open (lambda (x y) (if (< (cost-plus-h x) (cost-plus-h y)) t nil))))
+                 (if UCS (sort open (lambda (x y) (if (< (cost x) (cost y)) t nil))))
+                 (setf closed (append closed (list (state (pop open)))))
+                 ;; Clear open of any nodes we might have visted already.
+                 ;; This can happen if a node generates a node already on open but not closed.
+                 ;; We we always visit a node optimally though.
+                 (do ((current-state (state (first open)) (state (first open))))
+                   ((not (member-list current-state closed)))
+                   (pop open)))
                ;; Pretty printing for UCS below, if desired.
                ;;(princ (format nil "~%Puzzle: ~A~%States examined: ~A~%Solution cost: ~A~%Path: ~A~%Result: ~A~%"
                ;;         puzzle examined-states (cost (first open)) (process-path (path (first open))) (state (first open))))))
                ;; Printing as per assignment requireents below.
-               (print (list examined-states (cost (first open)) (process-path (path (first open)))))))
+               (print (list examined-states (cost (first open)) (process-path (path (first open))))))
+             (UCS (puzzle)
+               "See search method for implementaiton"   
+               (search puzzle :UCS t))
+             (ASTAR (puzzle)
+               "See search method for implementation"     
+               (search puzzle :ASTAR t)))
       ;(greedy input)
-      (UCS input))))
+      (ASTAR input))))
