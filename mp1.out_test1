@@ -1,0 +1,101 @@
+;; Dribble of #<IO TERMINAL-STREAM> started on 2014-11-12 01:14:37.
+;;     Loading file main.lisp ...
+;;     Loaded file main.lisp
+"
+Test blockpuzzle for various puzzles (not from input file).
+" 
+"Solving puzzle (O)" 
+"Greedy" 
+(1 0 (((O) . "S_zero"))) 
+"UCS" 
+(1 0 (((O) . "S_zero"))) 
+"ASTAR" 
+(1 0 (((O) . "S_zero"))) 
+"Solving puzzle (O W)" 
+"Greedy" 
+(1 0 (((O W) . "S_zero"))) 
+"UCS" 
+(1 0 (((O W) . "S_zero"))) 
+"ASTAR" 
+(1 0 (((O W) . "S_zero"))) 
+"Solving puzzle (O B W)" 
+"Greedy" 
+(2 2 (((O B W) . "S_zero") ((W B O) . 2))) 
+"UCS" 
+(3 2 (((O B W) . "S_zero") ((W B O) . 2))) 
+"ASTAR" 
+(3 2 (((O B W) . "S_zero") ((W B O) . 2))) 
+"Solving puzzle (B W W O)" 
+"Greedy" 
+(2 3 (((B W W O) . "S_zero") ((O W W B) . -3))) 
+"UCS" 
+(4 3 (((B W W O) . "S_zero") ((O W W B) . -3))) 
+"ASTAR" 
+(2 3 (((B W W O) . "S_zero") ((O W W B) . -3))) 
+"Solving puzzle (B B W O B W)" 
+"Greedy" 
+(6 12
+ (((B B W O B W) . "S_zero") ((O B W B B W) . -3) ((W B O B B W) . 2)
+  ((W B W B B O) . 3) ((W B W O B B) . -2) ((W O W B B B) . -2))) 
+"UCS" 
+(55 11
+ (((B B W O B W) . "S_zero") ((B O W B B W) . -2) ((B W O B B W) . 1)
+  ((B W W B B O) . 3) ((B W W O B B) . -2) ((O W W B B B) . -3))) 
+"ASTAR" 
+(48 11
+ (((B B W O B W) . "S_zero") ((B O W B B W) . -2) ((B W O B B W) . 1)
+  ((B W W B B O) . 3) ((B W W O B B) . -2) ((O W W B B B) . -3))) 
+"Solving puzzle (B W W B O B W W B)" 
+"Greedy" 
+(9 19
+ (((B W W B O B W W B) . "S_zero") ((B W W B W B W O B) . 3)
+  ((B W W B W O W B B) . -2) ((B W W O W B W B B) . -2)
+  ((O W W B W B W B B) . -3) ((W W O B W B W B B) . 2)
+  ((W W W B O B W B B) . 2) ((W W W B W B O B B) . 2)
+  ((W W W O W B B B B) . -3))) 
+"UCS" 
+(602 18
+ (((B W W B O B W W B) . "S_zero") ((B W W B W B W O B) . 3)
+  ((B W W B W O W B B) . -2) ((B W W O W B W B B) . -2)
+  ((O W W B W B W B B) . -3) ((W O W B W B W B B) . 1)
+  ((W W W B O B W B B) . 3) ((W W W O B B W B B) . -1)
+  ((W W W W B B O B B) . 3))) 
+"ASTAR" 
+(279 18
+ (((B W W B O B W W B) . "S_zero") ((B W W B W B W O B) . 3)
+  ((B W W B W O W B B) . -2) ((B W W O W B W B B) . -2)
+  ((O W W B W B W B B) . -3) ((W O W B W B W B B) . 1)
+  ((W W W B O B W B B) . 3) ((W W W O B B W B B) . -1)
+  ((W W W W B B O B B) . 3))) 
+"
+Verify blockpuzzle works for a properly formatted input file
+" 
+"Solving puzzle (O B W)" 
+"UCS" 
+(3 2 (((O B W) . "S_zero") ((W B O) . 2))) 
+"Solving puzzle (O B W)" 
+"A*" 
+(3 2 (((O B W) . "S_zero") ((W B O) . 2))) 
+"Solving puzzle (B W O)" 
+"Greedy" 
+(2 2 (((B W O) . "S_zero") ((O W B) . -2))) 
+"Solving puzzle (B B W O B W)" 
+"Greedy" 
+(7 12
+ (((B B W O B W) . "S_zero") ((B O W B B W) . -2) ((O B W B B W) . -1)
+  ((W B O B B W) . 2) ((W B W B B O) . 3) ((W B W O B B) . -2)
+  ((W O W B B B) . -2))) 
+"Solving puzzle (B B W O B W)" 
+"UCS" 
+(55 11
+ (((B B W O B W) . "S_zero") ((B O W B B W) . -2) ((B W O B B W) . 1)
+  ((B W W B B O) . 3) ((B W W O B B) . -2) ((O W W B B B) . -3))) 
+"Solving puzzle (B B W O B W)" 
+"A*" 
+(48 11
+ (((B B W O B W) . "S_zero") ((B O W B B W) . -2) ((B W O B B W) . 1)
+  ((B W W B B O) . 3) ((B W W O B B) . -2) ((O W W B B B) . -3))) 
+"
+Note: Bigger puzzles will take too long to compute.
+" 
+;; Dribble of #<IO TERMINAL-STREAM> finished on 2014-11-12 01:14:44.
